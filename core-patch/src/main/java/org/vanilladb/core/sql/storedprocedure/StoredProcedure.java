@@ -49,7 +49,7 @@ public abstract class StoredProcedure<H extends StoredProcedureParamHelper> {
 		// create a transaction
 		boolean isReadOnly = paramHelper.isReadOnly();
 		tx = VanillaDb.txMgr().newTransaction(
-			Connection.TRANSACTION_SERIALIZABLE, isReadOnly);
+			Connection.TRANSACTION_SERIALIZABLE, isReadOnly, true);
 	}
 	
 	public SpResultSet execute() {

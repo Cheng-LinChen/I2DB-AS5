@@ -31,6 +31,7 @@ import org.vanilladb.core.storage.tx.concurrency.ConcurrencyMgr;
 import org.vanilladb.core.storage.tx.concurrency.ReadCommittedConcurrencyMgr;
 import org.vanilladb.core.storage.tx.concurrency.RepeatableReadConcurrencyMgr;
 import org.vanilladb.core.storage.tx.concurrency.SerializableConcurrencyMgr;
+import org.vanilladb.core.storage.tx.concurrency.conservative.ConservativeConcurrencyMgr;
 import org.vanilladb.core.storage.tx.recovery.RecoveryMgr;
 import org.vanilladb.core.util.CoreProperties;
 
@@ -41,7 +42,7 @@ import org.vanilladb.core.util.CoreProperties;
  */
 public class TransactionMgr implements TransactionLifecycleListener {
 	private static Logger logger = Logger.getLogger(TransactionMgr.class.getName());
-	public static Class<?> serialConcurMgrCls, rrConcurMgrCls, rcConcurMgrCls, recoveryMgrCls, bufferMgrCls;
+	public static Class<?> serialConcurMgrCls, rrConcurMgrCls, rcConcurMgrCls, recoveryMgrCls, consConcurMgrCls, bufferMgrCls;
 	static {
 		serialConcurMgrCls = CoreProperties.getLoader().getPropertyAsClass(
 				TransactionMgr.class.getName() + ".SERIALIZABLE_CONCUR_MGR", SerializableConcurrencyMgr.class,
@@ -51,6 +52,9 @@ public class TransactionMgr implements TransactionLifecycleListener {
 				ConcurrencyMgr.class);
 		rcConcurMgrCls = CoreProperties.getLoader().getPropertyAsClass(
 				TransactionMgr.class.getName() + ".READ_COMMITTED_CONCUR_MGR", ReadCommittedConcurrencyMgr.class,
+				ConcurrencyMgr.class);
+		consConcurMgrCls = CoreProperties.getLoader().getPropertyAsClass(
+				TransactionMgr.class.getName() + ".CONSERVATIVE_CONCUR_MGR", ConservativeConcurrencyMgr.class,
 				ConcurrencyMgr.class);
 		recoveryMgrCls = CoreProperties.getLoader().getPropertyAsClass(TransactionMgr.class.getName() + ".RECOVERY_MGR",
 				RecoveryMgr.class, RecoveryMgr.class);
@@ -167,16 +171,26 @@ public class TransactionMgr implements TransactionLifecycleListener {
 			txNum = nextTxNum;
 			nextTxNum++;
 		}
-		return newTransaction(isolationLevel, readOnly, txNum);
+		return newTransaction(isolationLevel, readOnly, txNum, false);
 	}
 
-	public Transaction newTransaction(int isolationLevel, boolean readOnly, long txNum) {
+	public Transaction newTransaction(int isolationLevel, boolean readOnly, boolean isConservative) {
+		// Dispatch new transaction number
+		long txNum = -1;
+		synchronized (txNumLock) {
+			txNum = nextTxNum;
+			nextTxNum++;
+		}
+		return newTransaction(isolationLevel, readOnly, txNum, isConservative);
+	}
+
+	public Transaction newTransaction(int isolationLevel, boolean readOnly, long txNum, boolean isConservative) {
 		// Update next transaction number
 		synchronized (txNumLock) {
 			if (txNum >= nextTxNum)
 				nextTxNum = txNum + 1;
 		}
-		return createTransaction(isolationLevel, readOnly, txNum);
+		return createTransaction(isolationLevel, readOnly, txNum, isConservative);
 	}
 
 	public long getNextTxNum() {
@@ -191,7 +205,7 @@ public class TransactionMgr implements TransactionLifecycleListener {
 		} 
 	}
 
-	private Transaction createTransaction(int isolationLevel, boolean readOnly, long txNum) {
+	private Transaction createTransaction(int isolationLevel, boolean readOnly, long txNum, boolean isConservative) {
 		if (logger.isLoggable(Level.FINE))
 			logger.fine("new transaction: " + txNum);
 
@@ -215,15 +229,28 @@ public class TransactionMgr implements TransactionLifecycleListener {
 
 		switch (isolationLevel) {
 		case Connection.TRANSACTION_SERIALIZABLE:
-			try {
-				Class<?> partypes[] = new Class[1];
-				partypes[0] = Long.TYPE;
-				Constructor<?> ct = serialConcurMgrCls.getConstructor(partypes);
-				concurMgr = (ConcurrencyMgr) ct.newInstance(new Long(txNum));
-			} catch (Exception e) {
-				e.printStackTrace();
+			if (isConservative){
+				try {
+					Class<?> partypes[] = new Class[1];
+					partypes[0] = Long.TYPE;
+					Constructor<?> ct = consConcurMgrCls.getConstructor(partypes);
+					concurMgr = (ConcurrencyMgr) ct.newInstance(new Long(txNum));
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+				break;
 			}
-			break;
+			else{
+				try {
+					Class<?> partypes[] = new Class[1];
+					partypes[0] = Long.TYPE;
+					Constructor<?> ct = serialConcurMgrCls.getConstructor(partypes);
+					concurMgr = (ConcurrencyMgr) ct.newInstance(new Long(txNum));
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+				break;
+			}
 		case Connection.TRANSACTION_REPEATABLE_READ:
 			try {
 				Class<?> partypes[] = new Class[1];
