@@ -15,11 +15,19 @@
  *******************************************************************************/
 package org.vanilladb.bench.server.procedure.micro;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.vanilladb.bench.server.param.micro.MicroTxnProcParamHelper;
 import org.vanilladb.bench.server.procedure.StoredProcedureHelper;
 import org.vanilladb.core.query.algebra.Scan;
+import org.vanilladb.core.sql.Constant;
+import org.vanilladb.core.sql.IntegerConstant;
 import org.vanilladb.core.sql.storedprocedure.StoredProcedure;
 import org.vanilladb.core.storage.tx.Transaction;
+import org.vanilladb.core.storage.tx.concurrency.ConservativeConcurrencyMgr;
 
 public class MicroTxnProc extends StoredProcedure<MicroTxnProcParamHelper> {
 
@@ -27,11 +35,33 @@ public class MicroTxnProc extends StoredProcedure<MicroTxnProcParamHelper> {
 		super(new MicroTxnProcParamHelper());
 	}
 
+
 	@Override
 	protected void executeSql() {
 		MicroTxnProcParamHelper paramHelper = getParamHelper();
 		Transaction tx = getTransaction();
+
+		boolean modification = true;
+
+		if(modification){
+			List<Integer> readIds = new ArrayList<>();
+			for (int idx = 0; idx < paramHelper.getReadCount(); idx++) {
+				readIds.add(paramHelper.getReadItemId(idx));
+			}
+
+			List<Integer> writeIds = new ArrayList<>();
+			for (int idx = 0; idx < paramHelper.getWriteCount(); idx++) {
+				writeIds.add(paramHelper.getWriteItemId(idx));
+			}
+
+
+			((ConservativeConcurrencyMgr) tx.concurrencyMgr()).prepareConservativeLocks(readIds, writeIds);
 		
+		}
+			
+
+
+ 
 		// SELECT
 		for (int idx = 0; idx < paramHelper.getReadCount(); idx++) {
 			int iid = paramHelper.getReadItemId(idx);

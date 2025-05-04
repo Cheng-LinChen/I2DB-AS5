@@ -103,4 +103,5 @@ public abstract class StoredProcedure<H extends StoredProcedureParamHelper> {
 	protected void abort(String message) {
 		throw new ManuallyAbortException(message);
 	}
+	
 }

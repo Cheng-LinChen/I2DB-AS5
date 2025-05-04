@@ -28,10 +28,10 @@ import org.vanilladb.core.server.VanillaDb;
 import org.vanilladb.core.storage.buffer.BufferMgr;
 import org.vanilladb.core.storage.log.LogSeqNum;
 import org.vanilladb.core.storage.tx.concurrency.ConcurrencyMgr;
+import org.vanilladb.core.storage.tx.concurrency.ConservativeConcurrencyMgr;
 import org.vanilladb.core.storage.tx.concurrency.ReadCommittedConcurrencyMgr;
 import org.vanilladb.core.storage.tx.concurrency.RepeatableReadConcurrencyMgr;
 import org.vanilladb.core.storage.tx.concurrency.SerializableConcurrencyMgr;
-import org.vanilladb.core.storage.tx.concurrency.conservative.ConservativeConcurrencyMgr;
 import org.vanilladb.core.storage.tx.recovery.RecoveryMgr;
 import org.vanilladb.core.util.CoreProperties;
 
@@ -231,6 +231,7 @@ public class TransactionMgr implements TransactionLifecycleListener {
 		case Connection.TRANSACTION_SERIALIZABLE:
 			if (isConservative){
 				try {
+					System.out.println("[DEBUG] Tx is Conservative");
 					Class<?> partypes[] = new Class[1];
 					partypes[0] = Long.TYPE;
 					Constructor<?> ct = consConcurMgrCls.getConstructor(partypes);
