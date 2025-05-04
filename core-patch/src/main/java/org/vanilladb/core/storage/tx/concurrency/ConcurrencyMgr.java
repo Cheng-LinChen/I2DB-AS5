@@ -15,6 +15,8 @@
  *******************************************************************************/
 package org.vanilladb.core.storage.tx.concurrency;
 
+import java.util.List;
+
 import org.vanilladb.core.storage.file.BlockId;
 import org.vanilladb.core.storage.record.RecordId;
 import org.vanilladb.core.storage.tx.Transaction;
@@ -177,5 +179,10 @@ public abstract class ConcurrencyMgr implements TransactionLifecycleListener {
 
 	public void releaseRecordFileHeader(BlockId blk) {
 		lockTbl.release(blk, txNum, LockTable.X_LOCK);
+	}
+
+	
+	public void prepareConservativeLocks(List<Integer> readItemIds, List<Integer> writeItemIds){
+		// TODO Auto-generated method stub
 	}
 }

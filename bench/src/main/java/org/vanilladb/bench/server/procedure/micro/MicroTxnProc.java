@@ -55,7 +55,7 @@ public class MicroTxnProc extends StoredProcedure<MicroTxnProcParamHelper> {
 			}
 
 
-			((ConservativeConcurrencyMgr) tx.concurrencyMgr()).prepareConservativeLocks(readIds, writeIds);
+			tx.concurrencyMgr().prepareConservativeLocks(readIds, writeIds);
 		
 		}
 			

@@ -50,52 +50,68 @@ public class ConservativeConcurrencyMgr extends ConcurrencyMgr {
 	@Override
 	public void modifyFile(String fileName) {
 		// TODO Auto-generated method stub
+		// lockTbl.xLock(fileName, txNum);
 	}
 
 	@Override
 	public void readFile(String fileName) {
 		// TODO Auto-generated method stub
+		// lockTbl.isLock(fileName, txNum);
 		
 	}
 
 	@Override
 	public void insertBlock(BlockId blk) {
 		// TODO Auto-generated method stub
+		// lockTbl.xLock(blk.fileName(), txNum);
+		// lockTbl.xLock(blk, txNum);
 	}
 
 	@Override
 	public void modifyBlock(BlockId blk) {
 		// TODO Auto-generated method stub
+		// lockTbl.ixLock(blk.fileName(), txNum);
+		// lockTbl.xLock(blk, txNum);
 		
 	}
 
 	@Override
 	public void readBlock(BlockId blk) {
 		// TODO Auto-generated method stub
+		// lockTbl.isLock(blk.fileName(), txNum);
+		// lockTbl.sLock(blk, txNum);
 		
 	}
 
 	@Override
 	public void modifyRecord(RecordId recId) {
 		// TODO Auto-generated method stub
+		// lockTbl.ixLock(recId.block().fileName(), txNum);
+		// lockTbl.ixLock(recId.block(), txNum);
+		// lockTbl.xLock(recId, txNum);
 
 	}
 
 	@Override
 	public void readRecord(RecordId recId) {
 		// TODO Auto-generated method stub
+		// lockTbl.isLock(recId.block().fileName(), txNum);
+		// lockTbl.isLock(recId.block(), txNum);
+		// lockTbl.sLock(recId, txNum);
 		
 	}
 
 	@Override
 	public void modifyIndex(String dataFileName) {
 		// TODO Auto-generated method stub
+		//lockTbl.ixLock(dataFileName, txNum);
 		
 	}
 
 	@Override
 	public void readIndex(String dataFileName) {
 		// TODO Auto-generated method stub
+		//lockTbl.isLock(dataFileName, txNum);
 		
 	}
 
@@ -132,13 +148,13 @@ public class ConservativeConcurrencyMgr extends ConcurrencyMgr {
 	@Override
 	public void modifyLeafBlock(BlockId blk) {
 		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException("Unimplemented method 'modifyLeafBlock'");
+		//lockTbl.xLock(blk, txNum);
 	}
 
 
 	@Override
 	public void readLeafBlock(BlockId blk) {
 		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException("Unimplemented method 'readLeafBlock'");
+		//lockTbl.sLock(blk, txNum);
 	}
 }
